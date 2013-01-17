@@ -1,0 +1,11 @@
+Import("env")
+
+java_env = env.Clone()
+java_env["ANT"] = "ant -f java/build.xml"
+
+if java_env.GetOption("clean") :
+  java_env.Execute("ant clean")
+else :
+  if java_env["test"] :
+      java_env.Command("**dummy**", [], "$ANT test")
+  java_env.Command("**dummy**", [], "$ANT")

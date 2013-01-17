@@ -1,0 +1,14 @@
+*.pyc
+*.exe
+*.exp
+*.pdb
+*.lib
+*.obj
+*.suo
+*.ilk
+*.o
+*.a
+.scon*
+/config.log
+/c++/tests
+/java/build

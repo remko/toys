@@ -1,0 +1,36 @@
+<project name="Toys" default="compile" basedir=".">
+  <property name="src" location="."/>
+  <property name="build" location="build"/>
+  <property name="lib" location="../3rdParty"/>
+
+  <path id="classpath">
+    <fileset dir="${lib}" includes="**/*.jar"/>
+    <pathelement path="${build}"/>
+  </path>
+
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init">
+    <javac srcdir="${src}" destdir="${build}" classpathref="classpath" includeantruntime="true"/>
+  </target>
+
+  <target name="test" depends="compile">
+    <junit forkmode="once" fork="yes" includeantruntime="true" printsummary="yes" haltonfailure="on">
+      <classpath refid="classpath"/>
+      <jvmarg value="-javaagent:${lib}/jyield/jyield.jar"/>
+      <formatter type="brief"/>
+      <batchtest>
+        <fileset dir="${src}">
+          <include name="**/*.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="clean">
+    <delete dir="${build}"/>
+  </target>
+</project>

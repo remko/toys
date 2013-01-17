@@ -1,0 +1,100 @@
+import platform
+
+Import("env")
+
+if "msvc" in env["TOOLS"] :
+	env.Append(CCFLAGS = [
+		"/Wall", "/wd4820", "/wd4668", "/wd4710", "/wd4625", "/wd4626", "/wd4571",
+		"/wd4986", "/wd4826", "/wd4628", "/wd4100", "/wd4365", "/wd4640"])
+	env.Append(CXXFLAGS = ["/EHsc", "/MD", "/Zi"])
+	env.Append(LINKFLAGS = ["/DEBUG", "/INCREMENTAL:NO"])
+elif env["PLATFORM"] == "darwin" :
+	env["CC"] = "clang"
+	env["CXX"] = "clang++"
+	env["CXXFLAGS"] = ["-std=c++11"]
+	env["LINK"] = "clang"
+	if platform.machine() == "x86_64" :
+		env.Append(CCFLAGS = ["-arch", "x86_64"])
+		env.Append(LINKFLAGS = ["-arch", "x86_64"])
+
+
+conf = Configure(env)
+env["PLATFORM_FLAGS"] = {}
+if conf.CheckLib("stdc++") :
+	env["PLATFORM_FLAGS"]["LIBS"] = env["PLATFORM_FLAGS"].get("LIBS", []) + ["stdc++"]
+conf.Finish()
+
+################################################################################
+# Boost
+################################################################################
+
+boost_env = env.Clone()
+boost_env.Append(CPPDEFINES = ["BOOST_ALL_NO_LIB", "BOOST_SYSTEM_NO_DEPRECATED"])
+boost_env.Append(CPPPATH = ["#/3rdParty/boost"])
+boost_env["CCFLAGS"] = [flag for flag in env["CCFLAGS"] if not flag.lower().startswith("/w")]
+boost_sources = []
+if platform.machine() == "x86_64" :
+	boost_env["BOOST_CONTEXT_ARCH"] = "x86_64"
+else :
+	boost_env["BOOST_CONTEXT_ARCH"] = "i386"
+if env["PLATFORM"] == "win32" :
+	boost_env["BOOST_CONTEXT_SUFFIX"] = "ms_pe_masm.asm"
+	boost_sources += ["#/3rdParty/boost/libs/context/src/seh.cpp"]
+elif env["PLATFORM"] == "darwin" :
+	boost_env["BOOST_CONTEXT_SUFFIX"] = "sysv_macho_gas.S"
+else :
+	boost_env["BOOST_CONTEXT_SUFFIX"] = "sysv_elf_gas.S"
+boost = boost_env.StaticLibrary("Boost", boost_sources + [
+	"#/3rdParty/boost/libs/context/src/asm/jump_${BOOST_CONTEXT_ARCH}_${BOOST_CONTEXT_SUFFIX}",
+	"#/3rdParty/boost/libs/context/src/asm/make_${BOOST_CONTEXT_ARCH}_${BOOST_CONTEXT_SUFFIX}",
+])
+env["BOOST_FLAGS"] = {
+		"CPPDEFINES": boost_env["CPPDEFINES"],
+		"CPPPATH": boost_env["CPPPATH"],
+		"LIBS": boost,
+}
+
+################################################################################
+# GTest
+################################################################################
+
+gtest_env = env.Clone()
+gtest_env["CCFLAGS"] = [flag for flag in env["CCFLAGS"] if not flag.lower().startswith("/w")]
+gtest_env.Append(CPPPATH = [
+	"#/3rdParty/gmock/include", 
+	"#/3rdParty/gmock",
+	"#/3rdParty/gmock/gtest/include", 
+	"#/3rdParty/gmock/gtest"
+])
+gtest = gtest_env.StaticLibrary("GTest",[
+	"#/3rdParty/gmock/src/gmock-all.cc",
+	"#/3rdParty/gmock/gtest/src/gtest-all.cc",
+	"#/3rdParty/gmock/src/gmock_main.cc",
+])
+env["GTEST_FLAGS"] = {
+		"CPPPATH": [
+			"#/3rdParty/gmock/include", 
+			"#/3rdParty/gmock/gtest/include", 
+		],
+		"LIBS": gtest,
+}
+
+
+################################################################################
+
+tests_env = env.Clone()
+tests_env.MergeFlags(env["BOOST_FLAGS"])
+tests_env.MergeFlags(env["GTEST_FLAGS"])
+tests_env.MergeFlags(env["PLATFORM_FLAGS"])
+if "msvc" in env["TOOLS"] :
+	tests_env.Append(LINKFLAGS = ["/SUBSYSTEM:console"])
+
+tests_env.Append(CPPPATH = ["."])
+sources = [
+	"mergebst.cpp"
+]
+tests = tests_env.Program("tests", sources)
+
+if env["test"] :
+	test_env = env.Clone()
+	test_env.Command("**dummy**", tests, tests[0].abspath)
