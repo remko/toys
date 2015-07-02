@@ -59,7 +59,7 @@
 ; Maybe
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(struct maybe (value? value) #transparent)
+(struct maybe (value? value) #:transparent)
 
 (define (just value) 
   (maybe #t value))
@@ -553,11 +553,17 @@
        (<- x (do-something))
        (do-something-else x)))
     
-    (define (do-something-complex-that-fails)
+    (define (do-something-super-complex-that-fails)
       (result-do
        (<- x (do-something))
-       (<- y (do-something-that-fails))
-       (do-something-else x)))
+       (<- y (do-something-complex-that-fails))
+       (do-something-else x y)))
+
+    (define (do-something-complex-that-fails)
+      (result-do
+       (<- a (do-something))
+       (<- b (do-something-that-fails))
+       (do-something-else a b)))
     
     (set! do-log '())
     (let ([result (do-something-complex)])
@@ -568,7 +574,12 @@
     (set! do-log '())
     (let ([result (do-something-complex-that-fails)])
       (check-pred error-result? result)
-      (check-equal? (reverse do-log) '(do-something do-something-that-fails))))))
+      (check-equal? (reverse do-log) '(do-something do-something-that-fails)))
+    
+    (set! do-log '())
+    (let ([result (do-something-super-complex-that-fails)])
+      (check-pred error-result? result)
+      (check-equal? (reverse do-log) '(do-something do-something do-something-that-fails))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
