@@ -1,0 +1,9 @@
+extends: ./node_modules/eslint-config-remko-react/eslintrc
+env:
+  browser: true
+rules:
+  indent: [2, 2, {SwitchCase: 1}]
+  no-console: 0
+  prefer-reflect: 0
+ecmaFeatures:
+  destructuring: true

@@ -1,0 +1,40 @@
+.group-title { font-weight: bold; background-color: #eee; font-size: 1.2em; }
+.group { margin-top: 0.5em; margin-bottom: 0.5em; }
+
+.online { color: black; }
+.away, .xa { color: orange; }
+.offline { color: grey; }
+.dnd { color: red }
+
+.avatar {
+	width: 32px;
+	height: 32px;
+	margin-right: 12px;
+}
+
+.roster-items {
+	list-style-type: none;
+	padding-left: 0px;
+}
+
+.roster-groups {
+	list-style-type: none;
+}
+
+.rosteritem-enter {
+	opacity: 0.01;
+}
+
+.rosteritem-enter.rosteritem-enter-active {
+	opacity: 1;
+	transition: opacity 500ms ease-in;
+}
+
+.rosteritem-leave {
+	opacity: 1;
+}
+
+.rosteritem-leave.rosteritem-leave-active {
+	opacity: 0.01;
+	transition: opacity 300ms ease-in;
+}

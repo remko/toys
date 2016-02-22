@@ -100,7 +100,7 @@
 ; Result
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(struct result (error value))
+(struct result (error value) #:transparent)
 
 (define (error-result reason) 
   (result reason #f))
@@ -123,6 +123,15 @@
   (syntax-rules ()
     [(_ e ...) (monad-do (value-result result-bind result?) e ...)]))
 
+(define (!/ x y)
+  (if (= y 0)
+      (error-result "Division by zero")
+      (value-result (/ x y))))
+
+(define (try result handler)
+  (if (error-result? result)
+      (handler (result-error result))
+      (result-value result)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Main loop
@@ -533,7 +542,7 @@
    
    (test-case 
     "result-do test"
-    
+        
     (define (do-something)
       (display "do-something\n")
       (set! do-log (cons 'do-something do-log))
@@ -565,6 +574,28 @@
        (<- b (do-something-that-fails))
        (do-something-else a b)))
     
+    (define (get-magic-number x y)
+      (result-do
+       (<- a (- x y))
+       (<- b (!/ x a))
+       (+ b a)))
+
+    (define (get-super-magic-number x y)
+      (result-do
+       (<- a (* x y))
+       (<- b (get-magic-number x y))
+       (- b a)))
+    
+    (define (safe-get-super-magic-number x y)
+      (try 
+        (result-do 
+         (<- a (* x y))
+         (<- b (get-magic-number x y))
+         (- b a))
+        (λ (e)
+         (display "Error occurred: ") (display e) (newline))))
+
+    
     (set! do-log '())
     (let ([result (do-something-complex)])
       (check-pred value-result? result)
@@ -589,3 +620,19 @@
                        list-tests
                        maybe-tests
                        result-tests))
+
+ (define (get-magic-number x y)
+      (result-do
+       (<- a (- x y))
+       (<- b (!/ x a))
+       (+ b a)))
+
+ (define (safe-get-super-magic-number x y)
+      (try 
+       (result-do 
+        (<- a (* x y))
+        (<- b (get-magic-number x y))
+        (- b a))
+       (λ (e)
+         (display "Error occurred: ") (display e) (newline)
+        -1)))
